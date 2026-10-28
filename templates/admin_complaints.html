@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Complaints - Admin Portal</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 30px; background: #f4f6f9; color: #333; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header-bar { display: flex; justify-content: space-between; align-items: center; background: #2c3e50; color: white; padding: 15px 25px; border-radius: 5px; margin-bottom: 20px; }
+        .header-bar h1 { margin: 0; font-size: 22px; }
+        .logout-btn { background-color: #e74c3c; color: white; padding: 8px 15px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 14px; }
+        .logout-btn:hover { background-color: #c0392b; }
+        
+        .nav-tabs { display: flex; gap: 10px; margin-bottom: 30px; background: #34495e; padding: 10px; border-radius: 5px; }
+        .nav-tabs a { color: white; text-decoration: none; padding: 8px 16px; border-radius: 4px; font-weight: bold; }
+        .nav-tabs a.active, .nav-tabs a:hover { background: #2980b9; }
+
+        h2 { color: #2c3e50; margin-top: 30px; }
+        table { border-collapse: collapse; width: 100%; margin-bottom: 30px; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #2c3e50; color: white; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .form-box { background: #fff; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-radius: 5px; max-width: 500px; margin-bottom: 30px; }
+        input, select { width: 100%; padding: 8px; margin: 8px 0 15px 0; border: 1px solid #ccc; box-sizing: border-box; border-radius: 3px; }
+        .search-box { width: 100%; max-width: 400px; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; }
+        button { background-color: #27ae60; color: white; padding: 10px 15px; border: none; cursor: pointer; width: 100%; border-radius: 3px; font-size: 15px; font-weight: bold; }
+        button:hover { background-color: #219653; }
+        .alert { padding: 12px; border-radius: 4px; margin-bottom: 20px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-bar">
+            <h1>Admin Dashboard - Gated Community</h1>
+            <a href="/logout" class="logout-btn">Logout</a>
+        </div>
+
+        <div class="nav-tabs">
+            <a href="/admin/visitors">Visitor Logs</a>
+            <a href="/admin/bills">Maintenance Bills</a>
+            <a href="/admin/complaints" class="active">Complaints</a>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div>
+              {% for category, message in messages %}
+                <div class="alert">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <!-- Log a New Complaint Form for Admin -->
+        <div class="form-box">
+            <h2>Log New Complaint / Request</h2>
+            <form action="/admin_add_complaint" method="POST">
+                <label>Select Flat</label>
+                <select name="flat_id" required>
+                    {% for f in flats %}
+                    <option value="{{ f.flat_id }}">Flat {{ f.flat_number }}</option>
+                    {% endfor %}
+                </select>
+
+                <label>Category</label>
+                <select name="category" required>
+                    <option value="Plumbing">Plumbing</option>
+                    <option value="Electrical">Electrical</option>
+                    <option value="Security">Security</option>
+                    <option value="Housekeeping">Housekeeping</option>
+                    <option value="Other">Other</option>
+                </select>
+
+                <label>Description</label>
+                <input type="text" name="description" placeholder="Describe the issue..." required>
+
+                <button type="submit">Submit Complaint</button>
+            </form>
+        </div>
+
+        <h2>Community Complaints & Requests</h2>
+        <input type="text" id="complaintSearch" class="search-box" placeholder="Search complaints..." onkeyup="filterTable()">
+        <table id="complaintTable">
+            <tr>
+                <th>ID</th>
+                <th>Block</th>
+                <th>Flat</th>
+                <th>Category</th>
+                <th>Description</th>
+                <th>Status</th>
+                <th>Date Logged</th>
+                <th>Action</th>
+            </tr>
+            {% for c in complaints %}
+            <tr>
+                <td>{{ c.complaint_id }}</td>
+                <td>{{ c.block_name }}</td>
+                <td>{{ c.flat_number }}</td>
+                <td>{{ c.category }}</td>
+                <td>{{ c.description }}</td>
+                <td><b>{{ c.status }}</b></td>
+                <td>{{ c.created_at }}</td>
+                <td>
+                    {% if c.status == 'Open' %}
+                    <form action="/resolve_complaint/{{ c.complaint_id }}" method="POST" style="margin:0;">
+                        <button type="submit" style="padding: 6px 12px; font-size: 13px; background-color: #27ae60; width: auto;">Mark Resolved</button>
+                    </form>
+                    {% else %}
+                    <span style="color: #27ae60; font-weight: bold;">Closed</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="8" style="text-align: center; color: #777;">No complaints logged yet.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <script>
+        function filterTable() {
+            const input = document.getElementById("complaintSearch");
+            const filter = input.value.toLowerCase();
+            const table = document.getElementById("complaintTable");
+            const trs = table.getElementsByTagName("tr");
+            for (let i = 1; i < trs.length; i++) {
+                let match = false;
+                const tds = trs[i].getElementsByTagName("td");
+                for (let j = 0; j < tds.length; j++) {
+                    if (tds[j] && tds[j].innerText.toLowerCase().indexOf(filter) > -1) {
+                        match = true; break;
+                    }
+                }
+                trs[i].style.display = match ? "" : "none";
+            }
+        }
+    </script>
+</body>
+</html>
