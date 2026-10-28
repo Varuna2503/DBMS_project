@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Resident Login - Gated Community</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f8fafc; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-card { background: #fff; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; width: 100%; max-width: 380px; }
+        h2 { margin-top: 0; color: #1e293b; font-size: 22px; margin-bottom: 24px; text-align: center; }
+        .alert { padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        label { display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase; }
+        input { width: 100%; padding: 10px 14px; margin-bottom: 20px; border: 1px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+        button { background-color: #2563eb; color: white; padding: 12px; border: none; cursor: pointer; width: 100%; border-radius: 8px; font-size: 15px; font-weight: 600; }
+        button:hover { background-color: #1d4ed8; }
+        .admin-link { text-align: center; margin-top: 20px; font-size: 13px; }
+        .admin-link a { color: #2563eb; text-decoration: none; font-weight: 600; }
+        .admin-link a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h2>Resident Portal</h2>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form action="/resident_login" method="POST">
+            <label>Flat Number (e.g., A-101)</label>
+            <input type="text" name="flat_number" placeholder="Enter flat number" required>
+
+            <label>Password</label>
+            <input type="password" name="password" placeholder="Enter password" required>
+
+            <button type="submit">Login to Portal</button>
+        </form>
+
+        <div class="admin-link">
+            <a href="/login">← Switch to Admin Login</a>
+        </div>
+    </div>
+</body>
+</html>
