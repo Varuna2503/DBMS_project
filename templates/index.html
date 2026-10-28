@@ -44,20 +44,34 @@
 
     <h2>Pending Dues</h2>
     <table>
-        <tr><th>Flat</th><th>Block</th><th>Resident</th><th>Phone</th><th>Month/Year</th><th>Amount (₹)</th><th>Status</th></tr>
+        <tr><th>Flat</th><th>Block</th><th>Resident</th><th>Phone</th><th>Month/Year</th><th>Amount (₹)</th><th>Status</th><th>Action</th></tr>
         {% for d in pending_dues %}
         <tr>
             <td>{{ d.flat_number }}</td><td>{{ d.block_name }}</td><td>{{ d.resident_name }}</td><td>{{ d.phone }}</td><td>{{ d.bill_month }}/{{ d.bill_year }}</td><td>₹{{ d.amount }}</td><td><b>{{ d.status }}</b></td>
+            <td>
+                <form action="/pay_bill/{{ d.bill_id }}" method="POST">
+                    <button type="submit">Mark as Paid</button>
+                </form>
+            </td>
         </tr>
         {% endfor %}
     </table>
 
     <h2>Live Visitor Log</h2>
     <table>
-        <tr><th>ID</th><th>Block</th><th>Flat</th><th>Visitor Name</th><th>Phone</th><th>Vehicle</th><th>Entry Time</th></tr>
+        <tr><th>ID</th><th>Block</th><th>Flat</th><th>Visitor Name</th><th>Phone</th><th>Vehicle</th><th>Entry Time</th><th>Exit Time / Action</th></tr>
         {% for v in visitor_log %}
         <tr>
             <td>{{ v.visitor_id }}</td><td>{{ v.block_name }}</td><td>{{ v.flat_number }}</td><td>{{ v.visitor_name }}</td><td>{{ v.visitor_phone }}</td><td>{{ v.vehicle_number }}</td><td>{{ v.entry_time }}</td>
+            <td>
+                {% if v.exit_time %}
+                    {{ v.exit_time }}
+                {% else %}
+                <form action="/checkout_visitor/{{ v.visitor_id }}" method="POST">
+                    <button type="submit" style="background-color:#c0392b;">Check-Out</button>
+                </form>
+                {% endif %}
+            </td>
         </tr>
         {% endfor %}
     </table>
