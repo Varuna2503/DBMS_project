@@ -9,7 +9,7 @@ def get_db_connection():
     return mysql.connector.connect(
         host="localhost",
         user="root",
-        password="492225114191",  # <-- your MySQL root password
+        password="492225114191",  # <-- put your MySQL root password here
         database="gated_community_db"
     )
 
@@ -59,7 +59,7 @@ def add_visitor():
     phone = request.form['phone']
     vehicle_number = request.form['vehicle_number']
 
-    # Phone number validation
+    # Phone number validation (exactly 10 digits)
     if not is_valid_phone(phone):
         flash("Invalid phone number format. Please enter exactly 10 digits.", "error")
         return redirect(url_for('index'))
@@ -80,6 +80,39 @@ def add_visitor():
         if conn:
             conn.rollback()
         flash(f"Database error during check-in: {err}", "error")
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+            
+    return redirect(url_for('index'))
+
+
+@app.route('/add_bill', methods=['POST'])
+def add_bill():
+    flat_id = request.form['flat_id']
+    bill_month = request.form['bill_month']
+    bill_year = request.form['bill_year']
+    amount = request.form['amount']
+    due_date = request.form['due_date']
+
+    conn = None
+    cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO Maintenance_Bills (flat_id, bill_month, bill_year, amount, due_date, status) "
+            "VALUES (%s, %s, %s, %s, %s, 'Unpaid')",
+            (flat_id, bill_month, bill_year, amount, due_date)
+        )
+        conn.commit()
+        flash("Maintenance bill added successfully!", "success")
+    except mysql.connector.Error as err:
+        if conn:
+            conn.rollback()
+        flash(f"Database error while adding bill: {err}", "error")
     finally:
         if cursor:
             cursor.close()
