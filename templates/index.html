@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Gated Community Management System</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 30px; background: #f4f6f9; color: #333; }
+        h1, h2 { color: #2c3e50; }
+        table { border-collapse: collapse; width: 100%; margin-bottom: 30px; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #2c3e50; color: white; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .form-box { background: #fff; padding: 20px; margin-bottom: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-radius: 5px; width: 400px; }
+        input, select { width: 100%; padding: 8px; margin: 8px 0 15px 0; display: inline-block; border: 1px solid #ccc; box-sizing: border-box; }
+        button { background-color: #27ae60; color: white; padding: 10px 15px; border: none; cursor: pointer; width: 100%; border-radius: 3px; font-size: 16px; }
+        button:hover { background-color: #219653; }
+    </style>
+</head>
+<body>
+    <h1>Gated Community Management System</h1>
+
+    <!-- Interactive Form to Log a New Visitor -->
+    <div class="form-box">
+        <h2>Log New Visitor</h2>
+        <form action="/add_visitor" method="POST">
+            <label>Select Flat:</label>
+            <select name="flat_id" required>
+                {% for f in flats %}
+                <option value="{{ f.flat_id }}">Flat {{ f.flat_number }} (Block ID: {{ f.block_id }})</option>
+                {% endfor %}
+            </select>
+
+            <label>Visitor Name:</label>
+            <input type="text" name="visitor_name" required>
+
+            <label>Phone Number:</label>
+            <input type="text" name="phone" required>
+
+            <label>Vehicle Number:</label>
+            <input type="text" name="vehicle_number">
+
+            <button type="submit">Check-In Visitor</button>
+        </form>
+    </div>
+
+    <h2>Pending Dues</h2>
+    <table>
+        <tr><th>Flat</th><th>Block</th><th>Resident</th><th>Phone</th><th>Month/Year</th><th>Amount (₹)</th><th>Status</th></tr>
+        {% for d in pending_dues %}
+        <tr>
+            <td>{{ d.flat_number }}</td><td>{{ d.block_name }}</td><td>{{ d.resident_name }}</td><td>{{ d.phone }}</td><td>{{ d.bill_month }}/{{ d.bill_year }}</td><td>₹{{ d.amount }}</td><td><b>{{ d.status }}</b></td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h2>Live Visitor Log</h2>
+    <table>
+        <tr><th>ID</th><th>Block</th><th>Flat</th><th>Visitor Name</th><th>Phone</th><th>Vehicle</th><th>Entry Time</th></tr>
+        {% for v in visitor_log %}
+        <tr>
+            <td>{{ v.visitor_id }}</td><td>{{ v.block_name }}</td><td>{{ v.flat_number }}</td><td>{{ v.visitor_name }}</td><td>{{ v.visitor_phone }}</td><td>{{ v.vehicle_number }}</td><td>{{ v.entry_time }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
