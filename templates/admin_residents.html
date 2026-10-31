@@ -1,0 +1,124 @@
+{% extends 'base_admin.html' %}
+{% from '_macros.html' import icon %}
+{% block title %}Residents{% endblock %}
+{% block page_title %}Residents{% endblock %}
+{% block page_sub %}Everyone who lives in the community, and the flat they belong to.{% endblock %}
+
+{% block content %}
+<section class="stats">
+    <div class="stat">
+        <span class="stat-icon">{{ icon('users') }}</span>
+        <div><div class="stat-value">{{ residents|length }}</div><div class="stat-label">Residents</div></div>
+    </div>
+    <div class="stat">
+        <span class="stat-icon">{{ icon('home') }}</span>
+        <div><div class="stat-value">{{ residents|selectattr('resident_type', 'equalto', 'Owner')|list|length }}</div><div class="stat-label">Owners</div></div>
+    </div>
+    <div class="stat">
+        <span class="stat-icon grey">{{ icon('user-check') }}</span>
+        <div><div class="stat-value">{{ residents|selectattr('resident_type', 'equalto', 'Tenant')|list|length }}</div><div class="stat-label">Tenants</div></div>
+    </div>
+    <div class="stat">
+        <span class="stat-icon amber">{{ icon('grid') }}</span>
+        <div><div class="stat-value">{{ flats|selectattr('occupancy_type', 'equalto', 'Vacant')|list|length }}</div><div class="stat-label">Vacant flats</div></div>
+    </div>
+</section>
+
+<div class="grid-2">
+    <section class="card">
+        <div class="card-head">
+            <div><h2>Add a resident</h2><p>Register a new owner or tenant for a flat.</p></div>
+        </div>
+        <div class="card-body">
+            <form action="/add_resident" method="POST" data-validate-form>
+                <div class="field">
+                    <label for="flat_id">Flat</label>
+                    <select class="input" id="flat_id" name="flat_id" required data-required-msg="Choose a flat.">
+                        <option value="" disabled selected>Select a flat</option>
+                        {% for f in flats %}
+                        <option value="{{ f.flat_id }}">{{ f.flat_number }} ({{ f.block_name }}, {{ f.occupancy_type|lower }})</option>
+                        {% endfor %}
+                    </select>
+                    <div class="field-error"></div>
+                </div>
+                <div class="field">
+                    <label for="name">Full name</label>
+                    <input class="input" type="text" id="name" name="name" placeholder="e.g. Meera Nair" autocomplete="off" required data-required-msg="Enter the resident's name.">
+                    <div class="field-error"></div>
+                </div>
+                <div class="field">
+                    <label for="phone">Phone number</label>
+                    <input class="input" type="text" id="phone" name="phone" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number" autocomplete="off" required data-validate="phone" data-required-msg="Enter a phone number.">
+                    <div class="field-error"></div>
+                </div>
+                <div class="field">
+                    <label for="email">Email <span class="opt">(optional)</span></label>
+                    <input class="input" type="email" id="email" name="email" placeholder="name@example.com" autocomplete="off" data-range-msg="Enter a valid email address.">
+                    <div class="field-error"></div>
+                </div>
+                <div class="row2">
+                    <div class="field">
+                        <label for="resident_type">Type</label>
+                        <select class="input" id="resident_type" name="resident_type" required>
+                            <option value="Owner">Owner</option>
+                            <option value="Tenant">Tenant</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="password">Password <span class="opt">(optional)</span></label>
+                        <input class="input" type="text" id="password" name="password" placeholder="resident123" autocomplete="off">
+                    </div>
+                </div>
+                <button class="btn btn-primary" type="submit">{{ icon('plus') }} Add resident</button>
+            </form>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="card-head">
+            <div><h2>All residents</h2><p>{{ residents|length }} registered</p></div>
+        </div>
+        <div class="toolbar">
+            <div class="search">
+                {{ icon('search') }}
+                <input class="input" type="search" placeholder="Search name, phone, email or flat" aria-label="Search residents" data-filter-for="residentTable" data-filter-type="search">
+            </div>
+            <select class="input" aria-label="Filter by type" data-filter-for="residentTable" data-filter-key="type">
+                <option value="">All types</option>
+                <option value="owner">Owner</option>
+                <option value="tenant">Tenant</option>
+            </select>
+            <select class="input" aria-label="Filter by block" data-filter-for="residentTable" data-filter-key="block">
+                <option value="">All blocks</option>
+                {% for name in residents|map(attribute='block_name')|unique|sort %}
+                <option value="{{ name }}">{{ name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="table-wrap">
+            <table id="residentTable">
+                <thead><tr><th>Resident</th><th>Flat</th><th>Phone</th><th>Type</th></tr></thead>
+                <tbody>
+                    {% for r in residents %}
+                    <tr data-row data-type="{{ r.resident_type|lower }}" data-block="{{ r.block_name }}">
+                        <td>
+                            <div class="cell-main">{{ r.name }}</div>
+                            <div class="cell-sub">{{ r.email or 'No email' }}</div>
+                        </td>
+                        <td class="nowrap"><div class="cell-main">{{ r.flat_number }}</div><div class="cell-sub">{{ r.block_name }}</div></td>
+                        <td class="nowrap">{{ r.phone }}</td>
+                        <td>
+                            <span class="badge {{ 'badge-green' if r.resident_type == 'Owner' else 'badge-grey' }}">{{ r.resident_type }}</span>
+                            {% if r.is_primary_contact %}<div class="cell-sub">Primary contact</div>{% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="4" class="empty">No residents yet. Add one using the form.</td></tr>
+                    {% endfor %}
+                    <tr class="no-match"><td colspan="4" class="empty">No residents match your search or filters.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{% endblock %}

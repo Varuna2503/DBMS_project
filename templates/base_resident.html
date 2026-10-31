@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Resident Portal{% endblock %} - Gated Community</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+</head>
+<body>
+{% from '_macros.html' import icon %}
+
+<aside class="sidebar" id="sidebar">
+    <div class="brand">
+        <span class="brand-mark">{{ icon('home') }}</span>
+        <span>Gated Community<small>Resident portal</small></span>
+    </div>
+
+    <nav class="nav">
+        <a class="nav-link active" href="#summary" data-section="summary">{{ icon('grid') }} Summary</a>
+        <a class="nav-link" href="#bills" data-section="bills">{{ icon('receipt') }} Maintenance Bills</a>
+        <a class="nav-link" href="#visitors" data-section="visitors">{{ icon('login') }} Visitor History</a>
+        <a class="nav-link" href="#complaints" data-section="complaints">{{ icon('message') }} Complaints</a>
+    </nav>
+
+    <div class="sidebar-foot">
+        <span class="avatar">{{ (session.get('resident_name') or 'r')[0] }}</span>
+        <span class="who">{{ session.get('resident_name') or 'Resident' }}<small>Flat {{ session.get('flat_number') }}</small></span>
+        <a class="logout" href="{{ url_for('resident_logout') }}" title="Log out" aria-label="Log out">{{ icon('logout') }}</a>
+    </div>
+</aside>
+<div class="backdrop" id="backdrop"></div>
+
+<main class="main">
+    <header class="topbar">
+        <button class="menu-btn" id="menuBtn" type="button" aria-label="Open menu">{{ icon('menu') }}</button>
+        <div>
+            <h1 class="page-title">{% block page_title %}{% endblock %}</h1>
+            <p class="page-sub">{% block page_sub %}{% endblock %}</p>
+        </div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ 'error' if category == 'error' else 'success' }}" role="alert">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+</main>
+
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+<script>
+  // Highlight the sidebar link for the section currently in view; close the mobile menu on click.
+  (function () {
+    const links = [...document.querySelectorAll('.nav-link[data-section]')];
+    const setActive = (id) => links.forEach((l) => l.classList.toggle('active', l.dataset.section === id));
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => { if (e.isIntersecting) setActive(e.target.id); });
+    }, { rootMargin: '-20% 0px -65% 0px' });
+    links.forEach((l) => {
+      const sec = document.getElementById(l.dataset.section);
+      if (sec) io.observe(sec);
+      l.addEventListener('click', () => {
+        setActive(l.dataset.section);
+        document.getElementById('sidebar').classList.remove('open');
+        document.getElementById('backdrop').classList.remove('open');
+      });
+    });
+  })();
+</script>
+</body>
+</html>

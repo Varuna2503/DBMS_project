@@ -1,132 +1,163 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Resident Dashboard - Flat {{ session['flat_number'] }}</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 30px; background: #f4f6f9; color: #333; }
-        .container { max-width: 1100px; margin: 0 auto; }
-        .header-bar { display: flex; justify-content: space-between; align-items: center; background: #2c3e50; color: white; padding: 15px 25px; border-radius: 5px; margin-bottom: 30px; }
-        .header-bar h1 { margin: 0; font-size: 20px; }
-        .logout-btn { background-color: #e74c3c; color: white; padding: 8px 15px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 14px; }
-        .logout-btn:hover { background-color: #c0392b; }
-        h2 { color: #2c3e50; margin-top: 30px; }
-        table { border-collapse: collapse; width: 100%; margin-bottom: 30px; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; font-size: 14px; }
-        th { background-color: #2c3e50; color: white; }
-        tr:nth-child(even) { background-color: #f9f9f9; }
-        .form-box { background: #fff; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-radius: 5px; margin-bottom: 30px; max-width: 500px; }
-        input, select { width: 100%; padding: 8px; margin: 8px 0 15px 0; border: 1px solid #ccc; box-sizing: border-box; border-radius: 3px; }
-        button { background-color: #27ae60; color: white; padding: 10px 15px; border: none; cursor: pointer; width: 100%; border-radius: 3px; font-size: 15px; font-weight: bold; }
-        button:hover { background-color: #219653; }
-        .badge-unpaid { background-color: #f39c12; color: white; padding: 4px 8px; border-radius: 3px; font-size: 12px; }
-        .badge-paid { background-color: #27ae60; color: white; padding: 4px 8px; border-radius: 3px; font-size: 12px; }
-        .alert { padding: 12px; border-radius: 4px; margin-bottom: 20px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header-bar">
-            <h1>Welcome, {{ session['resident_name'] }} (Flat {{ session['flat_number'] }}, {{ session['block_name'] }})</h1>
-            <a href="/resident_logout" class="logout-btn">Logout</a>
-        </div>
+{% extends 'base_resident.html' %}
+{% from '_macros.html' import icon %}
+{% block title %}Flat {{ session['flat_number'] }}{% endblock %}
+{% block page_title %}Welcome, {{ session['resident_name'] }}{% endblock %}
+{% block page_sub %}Flat {{ session['flat_number'] }}, {{ session['block_name'] }}{% endblock %}
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            <div>
-              {% for category, message in messages %}
-                <div class="alert">{{ message }}</div>
-              {% endfor %}
-            </div>
-          {% endif %}
-        {% endwith %}
+{% block content %}
+{% set months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] %}
+{% set unpaid = bills|rejectattr('status', 'equalto', 'Paid')|list %}
+{% set inside = visitors|selectattr('exit_time', 'none')|list %}
+{% set open_c = complaints|selectattr('status', 'equalto', 'Open')|list %}
 
-        <!-- My Maintenance Bills -->
-        <h2>My Maintenance Bills</h2>
-        <table>
-            <tr>
-                <th>Month/Year</th>
-                <th>Amount</th>
-                <th>Due Date</th>
-                <th>Status</th>
-            </tr>
-            {% for b in bills %}
-            <tr>
-                <td>{{ b.bill_month }}/{{ b.bill_year }}</td>
-                <td>₹{{ b.amount }}</td>
-                <td>{{ b.due_date }}</td>
-                <td><span class="{{ 'badge-paid' if b.status == 'Paid' else 'badge-unpaid' }}">{{ b.status }}</span></td>
-            </tr>
-            {% else %}
-            <tr><td colspan="4" style="text-align: center; color: #777;">No bills found for your flat.</td></tr>
-            {% endfor %}
-        </table>
+<section class="stats" id="summary">
+    <div class="stat">
+        <span class="stat-icon amber">{{ icon('wallet') }}</span>
+        <div><div class="stat-value">₹{{ '{:,.0f}'.format(unpaid|sum(attribute='amount')) }}</div><div class="stat-label">Outstanding dues</div></div>
+    </div>
+    <div class="stat">
+        <span class="stat-icon grey">{{ icon('receipt') }}</span>
+        <div><div class="stat-value">{{ unpaid|length }}</div><div class="stat-label">Pending bills</div></div>
+    </div>
+    <div class="stat">
+        <span class="stat-icon">{{ icon('login') }}</span>
+        <div><div class="stat-value">{{ inside|length }}</div><div class="stat-label">Visitors inside now</div></div>
+    </div>
+    <div class="stat">
+        <span class="stat-icon grey">{{ icon('message') }}</span>
+        <div><div class="stat-value">{{ open_c|length }}</div><div class="stat-label">Open complaints</div></div>
+    </div>
+</section>
 
-        <!-- Log a New Complaint Form -->
-        <div class="form-box">
-            <h2>Raise a Complaint / Request</h2>
-            <form action="/resident_add_complaint" method="POST">
-                <label>Category</label>
-                <select name="category" required>
-                    <option value="Plumbing">Plumbing</option>
-                    <option value="Electrical">Electrical</option>
-                    <option value="Security">Security</option>
-                    <option value="Housekeeping">Housekeeping</option>
-                    <option value="Other">Other</option>
-                </select>
-
-                <label>Description</label>
-                <input type="text" name="description" placeholder="Describe your issue..." required>
-
-                <button type="submit">Submit Complaint</button>
-            </form>
-        </div>
-
-        <!-- My Complaints History -->
-        <h2>My Complaints Status</h2>
-        <table>
-            <tr>
-                <th>ID</th>
-                <th>Category</th>
-                <th>Description</th>
-                <th>Status</th>
-                <th>Date Logged</th>
-            </tr>
-            {% for c in complaints %}
-            <tr>
-                <td>{{ c.complaint_id }}</td>
-                <td>{{ c.category }}</td>
-                <td>{{ c.description }}</td>
-                <td><b>{{ c.status }}</b></td>
-                <td>{{ c.created_at }}</td>
-            </tr>
-            {% else %}
-            <tr><td colspan="5" style="text-align: center; color: #777;">No complaints logged.</td></tr>
-            {% endfor %}
-        </table>
-
-        <!-- Visitor History for this Flat -->
-        <h2>Visitor History for My Flat</h2>
-        <table>
-            <tr>
-                <th>Visitor Name</th>
-                <th>Phone</th>
-                <th>Vehicle</th>
-                <th>Entry Time</th>
-                <th>Exit Time</th>
-            </tr>
-            {% for v in visitors %}
-            <tr>
-                <td>{{ v.visitor_name }}</td>
-                <td>{{ v.phone }}</td>
-                <td>{{ v.vehicle_number or 'N/A' }}</td>
-                <td>{{ v.entry_time }}</td>
-                <td>{{ v.exit_time or 'Still Inside' }}</td>
-            </tr>
-            {% else %}
-            <tr><td colspan="5" style="text-align: center; color: #777;">No recent visitors recorded.</td></tr>
-            {% endfor %}
+<section class="card" id="bills" style="margin-bottom:20px;">
+    <div class="card-head">
+        <div><h2>Maintenance bills</h2><p>Your bills, newest first</p></div>
+        <select class="input" style="width:auto;min-width:140px;" aria-label="Filter bills by status" data-filter-for="billTable" data-filter-key="status">
+            <option value="">All statuses</option>
+            <option value="paid">Paid</option>
+            <option value="unpaid">Unpaid</option>
+            <option value="overdue">Overdue</option>
+        </select>
+    </div>
+    <div class="table-wrap">
+        <table id="billTable">
+            <thead><tr><th>Period</th><th>Amount</th><th>Due date</th><th>Status</th></tr></thead>
+            <tbody>
+                {% for b in bills|sort(attribute='bill_year,bill_month', reverse=true) %}
+                <tr data-row data-status="{{ b.status|lower }}">
+                    <td class="nowrap cell-main">{{ months[b.bill_month - 1] }} {{ b.bill_year }}</td>
+                    <td class="nowrap">₹{{ '{:,.2f}'.format(b.amount) }}</td>
+                    <td class="nowrap">{{ b.due_date.strftime('%d %b %Y') }}</td>
+                    <td>
+                        {% if b.status == 'Paid' %}<span class="badge badge-green">Paid</span>
+                        {% elif b.status == 'Overdue' %}<span class="badge badge-red">Overdue</span>
+                        {% else %}<span class="badge badge-amber">Unpaid</span>{% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4" class="empty">No bills yet.</td></tr>
+                {% endfor %}
+                <tr class="no-match"><td colspan="4" class="empty">No bills match this filter.</td></tr>
+            </tbody>
         </table>
     </div>
-</body>
-</html>
+</section>
+
+<section class="card" id="visitors" style="margin-bottom:20px;">
+    <div class="card-head">
+        <div><h2>Visitor history</h2><p>Everyone who has visited your flat</p></div>
+    </div>
+    <div class="toolbar">
+        <div class="search">
+            {{ icon('search') }}
+            <input class="input" type="search" placeholder="Search name, phone or vehicle" aria-label="Search visitors" data-filter-for="visitorTable" data-filter-type="search">
+        </div>
+        <select class="input" aria-label="Filter visitors by status" data-filter-for="visitorTable" data-filter-key="status">
+            <option value="">All statuses</option>
+            <option value="inside">Inside</option>
+            <option value="exited">Checked out</option>
+        </select>
+    </div>
+    <div class="table-wrap">
+        <table id="visitorTable">
+            <thead><tr><th>Visitor</th><th>Vehicle</th><th>Entry</th><th>Exit</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody>
+                {% for v in visitors %}
+                <tr data-row data-status="{{ 'exited' if v.exit_time else 'inside' }}">
+                    <td><div class="cell-main">{{ v.visitor_name }}</div><div class="cell-sub">{{ v.phone }}</div></td>
+                    <td class="nowrap">{{ v.vehicle_number or '-' }}</td>
+                    <td class="nowrap">{{ v.entry_time.strftime('%d %b, %I:%M %p') }}</td>
+                    <td class="nowrap">{{ v.exit_time.strftime('%d %b, %I:%M %p') if v.exit_time else '-' }}</td>
+                    <td>
+                        {% if v.exit_time %}<span class="badge badge-grey">Checked out</span>
+                        {% elif v.is_pre_approved %}<span class="badge badge-green">Inside, approved</span>
+                        {% else %}<span class="badge badge-amber">Awaiting your approval</span>{% endif %}
+                    </td>
+                    <td>
+                        {% if not v.exit_time and not v.is_pre_approved %}
+                        <form action="/resident_approve_visitor/{{ v.visitor_id }}" method="POST" style="margin:0;">
+                            <button type="submit" class="btn btn-sm btn-outline-teal">Approve</button>
+                        </form>
+                        {% else %}<span class="cell-sub">-</span>{% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="empty">No visitors have come to your flat yet.</td></tr>
+                {% endfor %}
+                <tr class="no-match"><td colspan="6" class="empty">No visitors match your search or filter.</td></tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<div class="grid-2" id="complaints">
+    <section class="card">
+        <div class="card-head">
+            <div><h2>Raise a complaint</h2><p>Tell the management team about an issue.</p></div>
+        </div>
+        <div class="card-body">
+            <form action="/resident_add_complaint" method="POST" data-validate-form>
+                <div class="field">
+                    <label for="category">Category</label>
+                    <select class="input" id="category" name="category" required>
+                        <option value="Plumbing">Plumbing</option>
+                        <option value="Electrical">Electrical</option>
+                        <option value="Security">Security</option>
+                        <option value="Housekeeping">Housekeeping</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="description">Description</label>
+                    <textarea class="input" id="description" name="description" maxlength="255" placeholder="What happened, and where?" required data-required-msg="Describe the issue."></textarea>
+                    <div class="field-error"></div>
+                </div>
+                <button class="btn btn-primary" type="submit">{{ icon('plus') }} Submit complaint</button>
+            </form>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="card-head">
+            <div><h2>My complaints</h2><p>{{ complaints|length }} submitted so far</p></div>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Category</th><th>Description</th><th>Logged</th><th>Status</th></tr></thead>
+                <tbody>
+                    {% for c in complaints %}
+                    <tr>
+                        <td class="cell-main">{{ c.category }}</td>
+                        <td style="min-width:180px;">{{ c.description }}</td>
+                        <td class="nowrap">{{ c.created_at.strftime('%d %b, %I:%M %p') }}</td>
+                        <td>{% if c.status == 'Open' %}<span class="badge badge-amber">Open</span>{% else %}<span class="badge badge-green">Resolved</span>{% endif %}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="4" class="empty">You have not raised any complaints.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{% endblock %}

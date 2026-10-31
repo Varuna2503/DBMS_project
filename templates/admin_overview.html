@@ -1,0 +1,122 @@
+{% extends 'base_admin.html' %}
+{% from '_macros.html' import icon %}
+{% block title %}Overview{% endblock %}
+{% block page_title %}Overview{% endblock %}
+{% block page_sub %}A quick look at what is happening in the community.{% endblock %}
+
+{% block content %}
+{% set total_flats = occupancy.values()|sum %}
+<section class="stats">
+    <div class="stat">
+        <span class="stat-icon">{{ icon('users') }}</span>
+        <div><div class="stat-value">{{ data.residents }}</div><div class="stat-label">Residents</div></div>
+    </div>
+    <div class="stat">
+        <span class="stat-icon">{{ icon('login') }}</span>
+        <div>
+            <div class="stat-value">{{ data.inside }}</div>
+            <div class="stat-label">Visitors inside</div>
+        </div>
+    </div>
+    <div class="stat">
+        <span class="stat-icon amber">{{ icon('wallet') }}</span>
+        <div>
+            <div class="stat-value">₹{{ '{:,.0f}'.format(data.dues_total) }}</div>
+            <div class="stat-label">Outstanding dues</div>
+        </div>
+    </div>
+    <div class="stat">
+        <span class="stat-icon grey">{{ icon('message') }}</span>
+        <div><div class="stat-value">{{ data.open_complaints }}</div><div class="stat-label">Open complaints</div></div>
+    </div>
+</section>
+
+<div class="grid-overview">
+    <section class="card">
+        <div class="card-head">
+            <div><h2>Recent visitors</h2><p>{{ data.today }} arrived today</p></div>
+            <a class="link" href="{{ url_for('admin_visitors') }}">View all</a>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Visitor</th><th>Flat</th><th>Entry</th><th>Status</th></tr></thead>
+                <tbody>
+                    {% for v in recent_visitors %}
+                    <tr>
+                        <td><div class="cell-main">{{ v.visitor_name }}</div><div class="cell-sub">{{ v.visitor_phone }}</div></td>
+                        <td class="nowrap"><div class="cell-main">{{ v.flat_number }}</div><div class="cell-sub">{{ v.block_name }}</div></td>
+                        <td class="nowrap">{{ v.entry_time.strftime('%d %b, %I:%M %p') }}</td>
+                        <td>{% if v.exit_time %}<span class="badge badge-grey">Checked out</span>{% else %}<span class="badge badge-green">Inside</span>{% endif %}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="4" class="empty">No visitors yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="card-head">
+            <div><h2>Flat occupancy</h2><p>{{ total_flats }} flat{{ '' if total_flats == 1 else 's' }} across all blocks</p></div>
+        </div>
+        <div class="card-body">
+            {% for label, key, cls in [('Owner occupied', 'Owner', ''), ('Tenant occupied', 'Tenant', 'navy'), ('Vacant', 'Vacant', 'grey')] %}
+            <div class="bar-row">
+                <div class="bar-top"><span>{{ label }}</span><span>{{ occupancy[key] }}</span></div>
+                <div class="bar"><span class="{{ cls }}" style="width: {{ ((occupancy[key] / total_flats * 100)|round|int) if total_flats else 0 }}%"></span></div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+
+<div class="grid-even">
+    <section class="card">
+        <div class="card-head">
+            <div><h2>Upcoming dues</h2><p>{{ data.dues_count }} pending, {{ data.overdue }} overdue</p></div>
+            <a class="link" href="{{ url_for('admin_bills') }}">View all</a>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Flat</th><th>Resident</th><th>Amount</th><th>Status</th></tr></thead>
+                <tbody>
+                    {% for d in due_list %}
+                    <tr>
+                        <td class="nowrap cell-main">{{ d.flat_number }}</td>
+                        <td>{{ d.resident_name }}</td>
+                        <td class="nowrap">₹{{ '{:,.0f}'.format(d.amount) }}</td>
+                        <td>{% if d.status == 'Overdue' %}<span class="badge badge-red">Overdue</span>{% else %}<span class="badge badge-amber">Unpaid</span>{% endif %}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="4" class="empty">No pending dues. Every bill is paid.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="card-head">
+            <div><h2>Open complaints</h2><p>Latest issues waiting for action</p></div>
+            <a class="link" href="{{ url_for('admin_complaints') }}">View all</a>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Flat</th><th>Category</th><th>Description</th></tr></thead>
+                <tbody>
+                    {% for c in open_list %}
+                    <tr>
+                        <td class="nowrap cell-main">{{ c.flat_number }}</td>
+                        <td>{{ c.category }}</td>
+                        <td>{{ c.description }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="3" class="empty">No open complaints.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{% endblock %}
